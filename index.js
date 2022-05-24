@@ -56,10 +56,24 @@ var app = http.createServer((request, response) => {
             });
         }
     } else if (pathname === '/create') {
-        fs.readdir('./data', (err, filelist) => {
+        db.query(`SELECT * FROM topic`, (error, topics) => {
+            if (error) {
+                throw error;
+            }
+
             var title = 'WEB - create';
-            var list = template.HTML(filelist);
-            var description = fs.readFileSync('create.html', 'utf8');
+            var list = template.list(filelist);
+            var description = `
+                <form action="/create_process" method="post">
+                    <p><input type="text" name="title" placeholder="title"></p>
+                    <p>
+                        <textarea name="description" placeholder="description"></textarea>
+                    </p>
+                    <p>
+                        <input type="submit">
+                    </p>
+                </form>
+            `;
             var html = template.HTML(title, list, description, '');
 
             response.writeHead(200);
@@ -80,9 +94,14 @@ var app = http.createServer((request, response) => {
             var title = post.title;
             var description = post.description;
 
-            // 파일 생성
-            fs.writeFile(`data/${title}`, description, 'utf8', (err) => {
-                response.writeHead(302, {Location: `/?id=${title}`});
+            // 데이터베이스에 데이터 입력
+            db.query(`INSET INTO topic (title, description, created, author_id) VALUES (?, ?, NOW(), ?)`, [title, description, 1], (error, result) => {
+                if (error) {
+                    throw error;
+                }
+
+                //.insertId 로 삽입된 행의 id를 가져옴
+                response.writeHead(302, {Location: `/id=${result.insertId}`});
                 response.end();
             });
         });
