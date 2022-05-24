@@ -24,7 +24,7 @@ var app = http.createServer((request, response) => {
         if (queryData.id === undefined) {
             db.query(`SELECT * FROM topic`, (error, topics) => {
                 var title = 'Welcome';
-                var description = '<p> Hello, NodeJS</p>';
+                var description = '<p>Hello, NodeJS</p>';
                 var list = template.list(topics);
                 var html = template.HTML(title, list, description, '<a href="/create">create</a>');
 
@@ -32,19 +32,21 @@ var app = http.createServer((request, response) => {
                 response.end(html);
             });
         } else {
-            fs.readdir('./data', (err, topics) => {
-                var filteredId = path.parse(queryData.id).base;
-                
-                fs.readFile(`data/${filteredId}`, 'utf8', (error, description) => {
-                    var title = queryData.id;
-                    var sanitizedTitle = sanitizeHtml(title);
-                    var sanitizeedDescription = sanitizeHtml(description, {
-                        allowedTags: ['h1']
-                    });
-                    var list = template.HTML(topics);
-                    var html = template.HTML(sanitizedTitle, list, '<p>' + sanitizeedDescription + '</p>', `<a href="/create">create</a> <a href="/update?id=${sanitizedTitle}">update</a>
+            db.query('SELECT * FROM topics', (error, topics) => {
+                if (error) {
+                    throw error;
+                }
+                db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], (err, topic) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    var title = topic[0].title;
+                    var description = `<p>${topic[0].description}</p>`;
+                    var list = template.list(topics);
+                    var html = template.HTML(title, list, description, '</p>', `<a href="/create">create</a> <a href="/update?id=${queryData.id}">update</a>
                     <form action="/delete_process" method="post">
-                        <input type="hidden" name="id" value="${title}">
+                        <input type="hidden" name="id" value="${queryData.id}">
                         <input type="submit" value="delete">
                     </form>`);
 
