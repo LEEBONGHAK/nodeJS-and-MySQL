@@ -8,7 +8,7 @@ var connection = mysql.createConnection({
 
 connection.connect();
 
-connection.query('SELECT * FROM topic', (error, results, fields) => {
+connection.query(`SELECT * FROM topic`, (error, results, fields) => {
 	if (error) {
 		console.log(error);
 	}

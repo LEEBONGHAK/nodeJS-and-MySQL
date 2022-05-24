@@ -5,6 +5,15 @@ var qs = require('querystring');
 var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
+var mysql = require('mysql');
+
+var db = mysql.createConnection({
+	host: 'localhost',
+	user: 'root',
+	password: '12341234',
+	database: 'test'
+});
+db.connect();
 
 var app = http.createServer((request, response) => {
     var _url = request.url;
@@ -13,17 +22,17 @@ var app = http.createServer((request, response) => {
 
     if (pathname === '/') {
         if (queryData.id === undefined) {
-            fs.readdir('./data', (err, filelist) => {
+            db.query(`SELECT * FROM topic`, (error, topics) => {
                 var title = 'Welcome';
-                var list = template.list(filelist);
                 var description = '<p> Hello, NodeJS</p>';
+                var list = template.list(topics);
                 var html = template.HTML(title, list, description, '<a href="/create">create</a>');
 
                 response.writeHead(200);
                 response.end(html);
             });
         } else {
-            fs.readdir('./data', (err, filelist) => {
+            fs.readdir('./data', (err, topics) => {
                 var filteredId = path.parse(queryData.id).base;
                 
                 fs.readFile(`data/${filteredId}`, 'utf8', (error, description) => {
@@ -32,7 +41,7 @@ var app = http.createServer((request, response) => {
                     var sanitizeedDescription = sanitizeHtml(description, {
                         allowedTags: ['h1']
                     });
-                    var list = template.HTML(filelist);
+                    var list = template.HTML(topics);
                     var html = template.HTML(sanitizedTitle, list, '<p>' + sanitizeedDescription + '</p>', `<a href="/create">create</a> <a href="/update?id=${sanitizedTitle}">update</a>
                     <form action="/delete_process" method="post">
                         <input type="hidden" name="id" value="${title}">
